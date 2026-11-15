@@ -1,4 +1,17 @@
-import type { LabDocument } from "../../../shared/document";
+import type { LabDocument, Element } from "../../../shared/document";
+import { normalizeElement } from "../../../shared/document";
+const KEYS = [
+  "x",
+  "y",
+  "angle",
+  "size",
+  "power",
+  "rays",
+  "spread",
+  "wavelength",
+  "focal",
+  "index",
+] as const;
 export function saveDocument(doc: LabDocument) {
   localStorage.setItem("lumen-document", JSON.stringify(doc));
 }
@@ -7,35 +20,20 @@ export function loadDocument(): LabDocument | null {
     const v = JSON.parse(localStorage.getItem("lumen-document") ?? "null");
     if (v?.version !== 1 || !Array.isArray(v.items) || v.items.length > 80)
       return null;
-    for (const e of v.items) {
+    const items: Element[] = [];
+    for (const raw of v.items) {
       if (
-        !["source", "mirror", "lens", "prism", "screen"].includes(e.kind) ||
-        typeof e.id !== "string"
+        !["source", "mirror", "lens", "prism", "screen"].includes(raw.kind) ||
+        typeof raw.id !== "string"
       )
         return null;
-      for (const k of [
-        "x",
-        "y",
-        "angle",
-        "size",
-        "power",
-        "rays",
-        "spread",
-        "wavelength",
-        "focal",
-        "index",
-      ])
-        if (!Number.isFinite(e[k])) return null;
-      if (
-        e.rays < 1 ||
-        e.rays > 41 ||
-        e.size <= 0 ||
-        e.focal === 0 ||
-        e.index < 1
-      )
+      for (const k of KEYS) if (!Number.isFinite(raw[k])) return null;
+      if (raw.rays < 1 || raw.rays > 41 || raw.size <= 0 || raw.index < 1)
         return null;
+      // 旧存档缺少镀膜字段时，normalizeElement 一律按 ideal 恢复原模型
+      items.push(normalizeElement(raw));
     }
-    return v;
+    return { version: 1, items };
   } catch {
     return null;
   }

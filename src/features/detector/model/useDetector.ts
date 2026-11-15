@@ -13,5 +13,6 @@ export function useDetector(doc: LabDocument, result: TraceResult) {
     resolution,
     setResolution,
     measurement: measure(screen, result.hits, resolution),
+    ledger: result.ledger,
   };
 }

@@ -65,5 +65,19 @@ export function parameters(e: Element): Parameter[] {
       step: 0.01,
       unit: "",
     });
+  // physical 镀膜的名义反射率/吸收率（正入射、550nm）
+  if (
+    e.coating === "physical" &&
+    (e.kind === "mirror" || e.kind === "lens")
+  ) {
+    common.push(
+      { key: "r0", label: "名义反射率 R₀", min: 0, max: 1, step: 0.01, unit: "" },
+      { key: "a0", label: "名义吸收率 A₀", min: 0, max: 1, step: 0.01, unit: "" },
+    );
+  }
   return common;
+}
+/** 支持镀膜模型的器件类型 */
+export function supportsCoating(e: Element): boolean {
+  return e.kind === "mirror" || e.kind === "lens" || e.kind === "prism";
 }

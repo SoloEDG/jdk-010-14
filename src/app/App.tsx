@@ -152,11 +152,15 @@ export function App() {
               <span>
                 {optics.result.segments.length} 段光路 ·{" "}
                 {state.doc.items.length} 个器件
+                {optics.result.truncated > 0
+                  ? ` · ${optics.result.truncated} 条支路未决`
+                  : ""}
               </span>
             </div>
           </section>
           <DetectorPanel
             {...detector}
+            doc={state.doc}
             onChoose={detector.setChosen}
             onResolution={detector.setResolution}
           />
@@ -181,7 +185,9 @@ export function App() {
         <span>
           <i />
           光路计算已更新
-          {optics.result.truncated > 0 ? " · 部分光线达到追迹上限" : ""}
+          {optics.result.truncated > 0
+            ? " · 存在未决能量，任务仅在可证明时完成"
+            : ""}
         </span>
         <span>{notice || "所有实验数据保存在你的浏览器中"}</span>
         <button onClick={() => setHelp(!help)}>
@@ -201,9 +207,19 @@ export function App() {
               4.
               选择实验任务，达到测量条件时自动完成。保存实验后，刷新可恢复器件布局。
             </p>
+            <p>
+              5. 镜面、透镜、棱镜可在右侧切换「理想 / 镀膜」：理想模型保持经典全反射与薄透镜；
+              镀膜模型的反射 R、透射 T、吸收 A 随波长与入射角变化，每个交点分裂为反射、透射两条支路。
+            </p>
             <p className="muted">
-              透镜采用近轴薄透镜模型。棱镜使用带色散的 Snell
-              折射；每条光线最多追迹 32 次。
+              截断语义（能量预算 / 路径深度 / 可计算性）：单支路功率低于光源的 0.01%
+              时挂起为未决能量；单条支路最多经过 48 个器件；每个光源最多 4096
+              条支路。未决能量不会被丢弃，而计入能量预算并给出接收能量区间；
+              只有实测下界能证明满足条件时，任务才会完成。
+            </p>
+            <p className="muted">
+              透镜近轴薄透镜模型；棱镜使用带色散的 Snell 折射，镀膜界面采用
+              Fresnel/经验镀膜且严格满足 R+T+A=1。
             </p>
             <button className="save-button" onClick={() => setHelp(false)}>
               开始探索

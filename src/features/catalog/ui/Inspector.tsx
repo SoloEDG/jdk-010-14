@@ -1,6 +1,6 @@
 import { Trash2, SlidersHorizontal } from "lucide-react";
-import { labels, type Element } from "../../../shared/document";
-import { parameters } from "../lib/parameters";
+import { labels, type Element, clamp } from "../../../shared/document";
+import { parameters, supportsCoating } from "../lib/parameters";
 export function Inspector({
   element,
   onUpdate,
@@ -23,6 +23,7 @@ export function Inspector({
         </p>
       </section>
     );
+  const coatingSupported = supportsCoating(element);
   return (
     <section className="inspector">
       <div className="section-title">
@@ -56,6 +57,34 @@ export function Inspector({
           </label>
         ))}
       </div>
+
+      {coatingSupported && (
+        <div className="coating-switch">
+          <span>界面模型</span>
+          <div role="group" aria-label="界面模型">
+            <button
+              className={element.coating === "ideal" ? "active" : ""}
+              onClick={() => onUpdate({ coating: "ideal" })}
+            >
+              理想
+            </button>
+            <button
+              className={element.coating === "physical" ? "active" : ""}
+              onClick={() => onUpdate({ coating: "physical" })}
+            >
+              镀膜
+            </button>
+          </div>
+        </div>
+      )}
+      {coatingSupported && element.coating === "physical" && (
+        <p className="coating-hint">
+          {element.kind === "prism"
+            ? "Fresnel 界面：反射/透射随波长与入射角变化，无吸收。"
+            : "R/T/A 随波长与入射角变化，正入射 550nm 处 T₀=1−R₀−A₀。"}
+        </p>
+      )}
+
       {parameters(element).map((p) => (
         <label className="parameter" key={p.key}>
           <span>
@@ -72,14 +101,17 @@ export function Inspector({
             max={p.max}
             step={p.step}
             value={Number(element[p.key])}
-            onChange={(e) =>
-              onUpdate({
-                [p.key]:
-                  p.key === "focal" && Number(e.target.value) === 0
-                    ? 10
-                    : Number(e.target.value),
-              })
-            }
+            onChange={(e) => {
+              const raw = Number(e.target.value);
+              const value =
+                p.key === "focal" && raw === 0 ? 10 : clamp(raw, p.min, p.max);
+              // 保证 R0 + A0 <= 1：调整其一时联动收缩另一个
+              if (p.key === "r0")
+                onUpdate({ r0: value, a0: Math.min(element.a0, 1 - value) });
+              else if (p.key === "a0")
+                onUpdate({ a0: value, r0: Math.min(element.r0, 1 - value) });
+              else onUpdate({ [p.key]: value });
+            }}
           />
           <div className="range-label">
             <span>{p.min}</span>

@@ -18,6 +18,9 @@ const e = (
   wavelength: 550,
   focal: 180,
   index: 1.52,
+  coating: "ideal",
+  r0: kind === "mirror" ? 0.95 : 0.08,
+  a0: 0.02,
   ...patch,
 });
 export const missions = [
@@ -63,6 +66,29 @@ export const missions = [
         e("source", "source", 130, 280, { size: 45 }),
         e("prism", "prism", 490, 300, { angle: -90, size: 170 }),
         e("screen", "screen", 800, 300, { size: 200 }),
+      ],
+    } as LabDocument,
+  },
+  {
+    id: "splitter",
+    name: "分光实验",
+    tag: "镀膜分光",
+    description:
+      "把镀膜平面镜调成半透半反，使反射与透射两条支路分别到达两个接收屏。",
+    condition: "两个接收屏各接收 ≥ 30% 光源能量（须证明，未决能量不计入）",
+    doc: {
+      version: 1,
+      items: [
+        e("source", "source", 120, 300, { size: 40 }),
+        e("mirror", "mirror", 480, 300, {
+          angle: -45,
+          size: 260,
+          coating: "physical",
+          r0: 0.5,
+          a0: 0,
+        }),
+        e("screen", "screen", 850, 300, { size: 260 }),
+        e("screen", "screen", 480, 120, { angle: 0, size: 260 }),
       ],
     } as LabDocument,
   },
